@@ -3445,7 +3445,7 @@ void options_manager::add_options_android()
 
     add( "ANDROID_SHORTCUT_DEFAULTS", android, translate_marker( "Default gameplay shortcuts" ),
          translate_marker( "The default set of gameplay shortcuts to show. Used on starting a new game and whenever all gameplay shortcuts are removed." ),
-         "0mi", 30
+         "egi&;m0", 30
        );
 
     add( "ANDROID_ACTIONMENU_AUTOADD", android,

@@ -2583,6 +2583,18 @@ void draw_quick_shortcuts()
             text = inp_mngr.get_keyname( key, event.type );
             text_scale = std::min( text_scale, 0.75f * ( width / ( font->width * utf8_width( text ) ) ) );
         }
+        // Human-readable action name shown on the button itself (not only while holding it)
+        std::string label;
+        if( category != "INVENTORY" ) {
+            label = touch_input_context.get_action_name( touch_input_context.input_to_action( event ) );
+            if( label == "ERROR" ) {
+                label = touch_input_context.get_action_name_for_manual_key( key );
+            }
+            if( label == "ERROR" || label == "none" ) {
+                label.clear();
+            }
+            label = remove_color_tags( label );
+        }
         hovered = is_quick_shortcut_touch && hovered_quick_shortcut == &event;
         show_hint = hovered &&
                     SDL_GetTicks() - finger_down_time > static_cast<uint32_t>
@@ -2658,12 +2670,42 @@ void draw_quick_shortcuts()
                      text_scale;
         }
         // TODO use draw_string instead
-        text_y = ( WindowHeight - ( height + font->height * text_scale ) * 0.5f ) / text_scale;
-        font->OutputChar( renderer, geometry, text, point( text_x + 1, text_y + 1 ), 0,
-                          get_option<int>( "ANDROID_SHORTCUT_OPACITY_SHADOW" ) * 0.01f );
-        font->OutputChar( renderer, geometry, text, point( text_x, text_y ),
-                          get_option<int>( "ANDROID_SHORTCUT_COLOR" ),
-                          get_option<int>( "ANDROID_SHORTCUT_OPACITY_FG" ) * 0.01f );
+        float button_center_x = shortcut_right ? ( WindowWidth - ( i + 0.5f ) * width ) :
+                                ( ( i + 0.5f ) * width );
+        if( !label.empty() ) {
+            // Labeled button: small key hint on the top row, readable action name on the bottom row
+            const float pad = height * 0.06f;
+            text_scale = std::min( text_scale, 0.4f * height / font->height );
+            text_x = ( button_center_x - ( font->width * utf8_width( text ) ) * text_scale * 0.5f ) / text_scale;
+            text_y = ( WindowHeight - height + pad ) / text_scale;
+            SDL_SetRenderScale( renderer.get(), text_scale, text_scale );
+            font->OutputChar( renderer, geometry, text, point( text_x + 1, text_y + 1 ), 0,
+                              get_option<int>( "ANDROID_SHORTCUT_OPACITY_SHADOW" ) * 0.01f );
+            font->OutputChar( renderer, geometry, text, point( text_x, text_y ),
+                              get_option<int>( "ANDROID_SHORTCUT_COLOR" ),
+                              get_option<int>( "ANDROID_SHORTCUT_OPACITY_FG" ) * 0.01f );
+
+            float label_scale = std::min( 0.4f * height / font->height,
+                                          0.92f * ( width - border * 2 ) / ( font->width * utf8_width( label ) ) );
+            int label_x = ( button_center_x - ( font->width * utf8_width( label ) ) * label_scale * 0.5f ) /
+                          label_scale;
+            int label_y = ( WindowHeight - pad - font->height * label_scale ) / label_scale;
+            SDL_SetRenderScale( renderer.get(), label_scale, label_scale );
+            font->OutputChar( renderer, geometry, label, point( label_x + 1, label_y + 1 ), 0,
+                              get_option<int>( "ANDROID_SHORTCUT_OPACITY_SHADOW" ) * 0.01f );
+            font->OutputChar( renderer, geometry, label, point( label_x, label_y ),
+                              get_option<int>( "ANDROID_SHORTCUT_COLOR" ),
+                              get_option<int>( "ANDROID_SHORTCUT_OPACITY_FG" ) * 0.01f );
+            // restore the key-text scale for the hover popup code below
+            SDL_SetRenderScale( renderer.get(), text_scale, text_scale );
+        } else {
+            text_y = ( WindowHeight - ( height + font->height * text_scale ) * 0.5f ) / text_scale;
+            font->OutputChar( renderer, geometry, text, point( text_x + 1, text_y + 1 ), 0,
+                              get_option<int>( "ANDROID_SHORTCUT_OPACITY_SHADOW" ) * 0.01f );
+            font->OutputChar( renderer, geometry, text, point( text_x, text_y ),
+                              get_option<int>( "ANDROID_SHORTCUT_COLOR" ),
+                              get_option<int>( "ANDROID_SHORTCUT_OPACITY_FG" ) * 0.01f );
+        }
         if( hovered ) {
             // draw a second button hovering above the first one
             font->OutputChar( renderer, geometry, text,
